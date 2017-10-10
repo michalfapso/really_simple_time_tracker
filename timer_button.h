@@ -5,12 +5,13 @@
 #include <QDateTime>
 class QLabel;
 class QTimer;
+class TimerData;
 
 class TimerButton : public QPushButton
 {
 	Q_OBJECT
 	public:
-		TimerButton(QWidget* parent = 0);
+		TimerButton(TimerData* pTimerData, QWidget* parent = 0);
 		void SetName(QString s);
 		void SetElapsedSeconds(float f);
 		void Stop();
@@ -18,6 +19,7 @@ class TimerButton : public QPushButton
 		bool IsRunning();
 	protected:
 		void Update();
+		TimerData* mpTimerData;
 		float mElapsedSeconds;
 		QString mName;
 		QLabel* mpLabelName;
