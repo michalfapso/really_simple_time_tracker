@@ -44,6 +44,7 @@ void TimerButton::Update()
 	QString time = seconds_to_datetime(mElapsedSeconds).toString(time_format);
 	
 	setText(QString("%1 %2").arg(mName).arg(time));
+	mpTimerData->Update(mName);
 }
 
 void TimerButton::SetName(QString s)
@@ -64,14 +65,13 @@ void TimerButton::Stop()
 	if (mpTimer->isActive()) {
 		mpTimer->stop();
 		//setStyleSheet("");
-		QDateTime stop_time = QDateTime::currentDateTime();
-		mpTimerData->Add(mName, mStartTime, stop_time);
+		mpTimerData->Stop(mName);
 	}
 }
 
 void TimerButton::Start()
 {
-	mStartTime = QDateTime::currentDateTime();
+	mpTimerData->Start(mName);
 	mpTimer->start();
 	//setStyleSheet("border: 1px solid #007700; color: #007700; font-weight: bold;");
 	//setChecked(true);

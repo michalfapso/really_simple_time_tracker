@@ -25,7 +25,6 @@ class TimerButton : public QPushButton
 		QLabel* mpLabelName;
 		QLabel* mpLabelTime;
 		QTimer* mpTimer;
-		QDateTime mStartTime;
 };
 
 #endif // TIMERBUTTON_H

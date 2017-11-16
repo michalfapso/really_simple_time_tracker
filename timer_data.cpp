@@ -8,6 +8,7 @@
 #include <QFile>
 #include <QMessageBox>
 #include <QTextStream>
+#include <cassert>
 
 #define DIR_NAME "timer_data"
 #define DATETIME_FORMAT "yyyy-MM-dd_hh:mm:ss"
@@ -30,23 +31,6 @@ void TimerData::ForEachTimer(std::function<void(const QString& name)> f)
 			f(fi.baseName());
 		}
 	}
-}
-
-void TimerData::Add(const QString& name, const QDateTime& startTime, const QDateTime& stopTime)
-{
-	QString filename = QString("%1/%2.log").arg(DIR_NAME).arg(name);
-	QFile f(filename);
-	if (!f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append)) {
-		QMessageBox::warning(nullptr, "Error", tr("Unable to open file '%1' for writing").arg(filename));
-	}
-	QTextStream t(&f);
-	QString format = DATETIME_FORMAT;
-	//qDebug() << mStartTime << " ... " << stop_time<<" = " << mStartTime.msecsTo(stop_time) << " = " << QDateTime::fromMSecsSinceEpoch(mStartTime.msecsTo(stop_time), QTimeZone::utc());
-	t
-		<< startTime.toString(format)
-		<< '\t'
-		<< seconds_to_datetime(startTime.msecsTo(stopTime)/1000).toString("hh:mm:ss")
-		<< '\n';
 }
 
 void TimerData::Update()
@@ -102,3 +86,96 @@ void TimerData::Update()
 		mDataSum[date] = sum;
 	}
 }
+
+void TimerData::Start(const QString& name)
+{
+	qDebug() << "TimerData::Start() name:"<<name;
+	auto start_time = QDateTime::currentDateTime();
+	mStartTimes[name] = start_time;
+}
+
+void TimerData::Update(const QString& name)
+{
+	qDebug() << "TimerData::Start() name:"<<name;
+	
+	QString filename = GetFilename(name);
+	QFile f(filename);
+	if (!f.open(QIODevice::ReadWrite | QIODevice::Text)) {
+		QMessageBox::warning(nullptr, "Error", tr("Unable to open file '%1' for reading and writing").arg(filename));
+	}
+	
+	QByteArray last_line;
+	qint64 last_line_pos = 0;
+	while (!f.atEnd()) {
+		last_line_pos = f.pos();
+		last_line = f.readLine();
+		qDebug() << "pos:"<<f.pos()<<" line:"<<QString::fromUtf8(last_line);
+	}
+	QString format = DATETIME_FORMAT;
+	
+	QDateTime start_time;
+	if (!GetStartTime(name, &start_time))
+	{
+		qDebug() << "timer "<<name<<" has not started yet.";
+		return;
+	}
+			
+	QStringList a = QString::fromUtf8(last_line).split(QRegExp("[\\s]+"));
+	QDateTime now = QDateTime::currentDateTime();
+	qDebug() << "a[0]:"<<a[0]<<" start_time:"<<start_time.toString(format)<<" now:"<<now.toString(format)<<" msecsTo:"<<(start_time.msecsTo(now))<<" seconds:"<<(start_time.msecsTo(now)/1000)<<" toDateTime:"<<seconds_to_datetime(start_time.msecsTo(now)/1000)<<" toString:"<<seconds_to_datetime(start_time.msecsTo(now)/1000).toString("hh:mm:ss");
+	// When the start time on the last line matches the current start time, that line is updated
+	QString last_line_new;
+	{
+		QTextStream t(&last_line_new, QIODevice::WriteOnly);
+		t
+			<< start_time.toString(format)
+			<< '\t'
+			<< seconds_to_datetime(start_time.msecsTo(now)/1000).toString("hh:mm:ss")
+			<< '\n';
+	}
+	if (a.size() >= 2 && a[0] == start_time.toString(format))
+	{
+		qDebug() << "equal -> updating last row";
+		f.seek(last_line_pos);
+		//qDebug() <<"written: "<<QString::fromUtf8(last_line_new);
+		qDebug() <<"written: "<<last_line_new;
+		f.write(last_line_new.toUtf8());
+		f.resize(f.pos());
+	} else {
+		f.write(last_line_new.toUtf8());
+	}
+	//qDebug() << mStartTime << " ... " << stop_time<<" = " << mStartTime.msecsTo(stop_time) << " = " << QDateTime::fromMSecsSinceEpoch(mStartTime.msecsTo(stop_time), QTimeZone::utc());
+}
+
+void TimerData::Stop(const QString& name)
+{
+	QDateTime stop_time = QDateTime::currentDateTime();
+	Update(name);
+}
+
+float TimerData::GetRunningSeconds(const QString& name)
+{
+	QDateTime start_time;
+	if (!GetStartTime(name, &start_time)) {
+		return 0;
+	}
+	QDateTime now = QDateTime::currentDateTime();
+	return start_time.msecsTo(now)/1000;
+}
+
+QString TimerData::GetFilename(const QString& name)
+{
+	return QString("%1/%2.log").arg(DIR_NAME).arg(name);
+}
+
+bool TimerData::GetStartTime(const QString& name, QDateTime* startTimeOut)
+{
+	assert(startTimeOut);
+	auto it = mStartTimes.find(name);
+	if (it != mStartTimes.end()) {
+		*startTimeOut = it.value();
+		return true;
+	}
+	return false;
+}
+
