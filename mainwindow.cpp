@@ -30,8 +30,9 @@ MainWindow::MainWindow(QWidget *parent) :
 	layout->setContentsMargins(2,0,2,0);
 
 	int buttons_count = 0;
+	QButtonGroup* button_group = new QButtonGroup(this);
 	mpTimerData->ForEachTimer([&](QString name){
-		CreateTimerButton(layout, name, 0);
+		CreateTimerButton(layout, button_group, name, 0);
 		buttons_count ++;
 	});
 //	CreateTimerButton(layout, "T1", 60*60 + 11); buttons_count ++;
@@ -75,13 +76,14 @@ MainWindow::~MainWindow()
 	delete ui;
 }
 
-void MainWindow::CreateTimerButton(QLayout* layout, QString name, float elapsedSeconds)
+void MainWindow::CreateTimerButton(QLayout* layout, QButtonGroup* buttonGroup, QString name, float elapsedSeconds)
 {
 	TimerButton* b = new TimerButton(mpTimerData, ui->centralWidget);
 	qDebug() << "creating timerButton: "<<b;
 	b->SetName(name);
 	b->SetElapsedSeconds(elapsedSeconds);
 	layout->addWidget(b);
+	buttonGroup->addButton(b);
 	connect(b, &QPushButton::clicked, [this, b]{
 		bool run = !b->IsRunning();
 		StopAllTimers();
