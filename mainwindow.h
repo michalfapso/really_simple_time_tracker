@@ -26,7 +26,7 @@ protected:
 	void closeEvent(QCloseEvent *event);
 
 private:
-	void CreateTimerButton(QLayout* layout, QButtonGroup* buttonGroup, QString name, float elapsedSeconds);
+	void CreateTimerButton(QLayout* layout, QString name, float elapsedSeconds);
 	void StopAllTimers();
 	Ui::MainWindow *ui;
 	QPoint mDragPosition;

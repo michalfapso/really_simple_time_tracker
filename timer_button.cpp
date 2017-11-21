@@ -64,8 +64,8 @@ void TimerButton::Stop()
 {
 	if (mpTimer->isActive()) {
 		mpTimer->stop();
-		//setStyleSheet("");
 		mpTimerData->Stop(mName);
+		setChecked(false);
 	}
 }
 
@@ -73,8 +73,7 @@ void TimerButton::Start()
 {
 	mpTimerData->Start(mName);
 	mpTimer->start();
-	//setStyleSheet("border: 1px solid #007700; color: #007700; font-weight: bold;");
-	//setChecked(true);
+	setChecked(true);
 }
 
 bool TimerButton::IsRunning()
